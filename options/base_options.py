@@ -1,9 +1,11 @@
 import argparse
 import os
-from util import util
+
 import torch
-import models
+
 import data
+import models
+from util import util
 
 
 class BaseOptions():
@@ -28,6 +30,8 @@ class BaseOptions():
         parser.add_argument('--easy_label', type=str, default='experiment_name', help='Interpretable name')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
+        parser.add_argument("--seed", type=int, default=2014, help="seed for randomness and near reproducibility")
+        parser.add_argument("--deterministic", action='store_true', help="use deterministic operations for reproducibility")
         # model parameters
         parser.add_argument('--model', type=str, default='cut', help='chooses which model to use.')
         parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels: 3 for RGB and 1 for grayscale')

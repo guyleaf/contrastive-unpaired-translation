@@ -11,7 +11,9 @@ Now you can use the dataset class by specifying flag '--dataset_mode dummy'.
 See our template dataset class 'template_dataset.py' for more details.
 """
 import importlib
+
 import torch.utils.data
+
 from data.base_dataset import BaseDataset
 
 
@@ -72,12 +74,22 @@ class CustomDatasetDataLoader():
         dataset_class = find_dataset_using_name(opt.dataset_mode)
         self.dataset = dataset_class(opt)
         print("dataset [%s] was created" % type(self.dataset).__name__)
+
+        if opt.serial_batches:
+            generator = None
+        else:
+            generator = torch.Generator()
+            generator.manual_seed(opt.seed)
+
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=opt.batch_size,
-            shuffle=not opt.serial_batches,
+            shuffle=generator is not None,
             num_workers=int(opt.num_threads),
             drop_last=True if opt.isTrain else False,
+            pin_memory=True,
+            persistent_workers=True,
+            generator=generator
         )
 
     def set_epoch(self, epoch):

@@ -1,13 +1,17 @@
 """This module contains simple helper functions """
 from __future__ import print_function
-import torch
-import numpy as np
-from PIL import Image
-import os
-import importlib
+
 import argparse
+import importlib
+import os
+import random
 from argparse import Namespace
+
+import numpy as np
+import torch
+import torch.version
 import torchvision
+from PIL import Image
 
 
 def str2bool(v):
@@ -164,3 +168,17 @@ def correct_resize(t, size, mode=Image.BICUBIC):
         resized_t = torchvision.transforms.functional.to_tensor(one_image) * 2 - 1.0
         resized.append(resized_t)
     return torch.stack(resized, dim=0).to(device)
+
+
+def seed_everything(seed: int, deterministic: bool = False):
+    random.seed(seed)
+    np.random.seed(seed)
+    # in manual_seed implementation, the cuda devices will be seeded too.
+    torch.manual_seed(seed)
+    
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+        if torch.__version__ >= "1.10.0":
+            torch.use_deterministic_algorithms(True)
