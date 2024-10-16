@@ -1,10 +1,11 @@
-import numpy as np
 import os.path
+import random
+
+import numpy as np
+from PIL import Image
+
 from data.base_dataset import BaseDataset, get_transform
 from data.image_folder import make_dataset
-from PIL import Image
-import random
-import util.util as util
 
 
 class SingleImageDataset(BaseDataset):
@@ -87,16 +88,16 @@ class SingleImageDataset(BaseDataset):
                      'patch_index': self.patch_indices_A[index],
                      'flip': random.random() > 0.5}
 
-            transform_A = get_transform(self.opt, params=param, method=Image.BILINEAR)
+            transform_A = get_transform(self.opt, params=param, method=Image.Resampling.BILINEAR)
             A = transform_A(A_img)
 
             param = {'scale_factor': self.zoom_levels_B[index],
                      'patch_index': self.patch_indices_B[index],
                      'flip': random.random() > 0.5}
-            transform_B = get_transform(self.opt, params=param, method=Image.BILINEAR)
+            transform_B = get_transform(self.opt, params=param, method=Image.Resampling.BILINEAR)
             B = transform_B(B_img)
         else:
-            transform = get_transform(self.opt, method=Image.BILINEAR)
+            transform = get_transform(self.opt, method=Image.Resampling.BILINEAR)
             A = transform(A_img)
             B = transform(B_img)
 
