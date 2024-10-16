@@ -10,6 +10,7 @@
 Now you can use the dataset class by specifying flag '--dataset_mode dummy'.
 See our template dataset class 'template_dataset.py' for more details.
 """
+
 import importlib
 
 import torch.utils.data
@@ -28,14 +29,16 @@ def find_dataset_using_name(dataset_name):
     datasetlib = importlib.import_module(dataset_filename)
 
     dataset = None
-    target_dataset_name = dataset_name.replace('_', '') + 'dataset'
+    target_dataset_name = dataset_name.replace("_", "") + "dataset"
     for name, cls in datasetlib.__dict__.items():
-        if name.lower() == target_dataset_name.lower() \
-           and issubclass(cls, BaseDataset):
+        if name.lower() == target_dataset_name.lower() and issubclass(cls, BaseDataset):
             dataset = cls
 
     if dataset is None:
-        raise NotImplementedError("In %s.py, there should be a subclass of BaseDataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
+        raise NotImplementedError(
+            "In %s.py, there should be a subclass of BaseDataset with class name that matches %s in lowercase."
+            % (dataset_filename, target_dataset_name)
+        )
 
     return dataset
 
@@ -61,7 +64,7 @@ def create_dataset(opt):
     return dataset
 
 
-class CustomDatasetDataLoader():
+class CustomDatasetDataLoader:
     """Wrapper class of Dataset class that performs multi-threaded data loading"""
 
     def __init__(self, opt):
@@ -81,15 +84,16 @@ class CustomDatasetDataLoader():
             generator = torch.Generator()
             generator.manual_seed(opt.seed)
 
+        num_workers = int(opt.num_threads)
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=opt.batch_size,
             shuffle=generator is not None,
-            num_workers=int(opt.num_threads),
+            num_workers=num_workers,
             drop_last=True if opt.isTrain else False,
             pin_memory=True,
-            persistent_workers=True,
-            generator=generator
+            persistent_workers=num_workers > 0,
+            generator=generator,
         )
 
     def set_epoch(self, epoch):
