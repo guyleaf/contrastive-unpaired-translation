@@ -5,13 +5,12 @@ import torch
 from data import create_dataset
 from models import create_model
 from options.train_options import TrainOptions
-from util.util import seed_everything
 from util.visualizer import Visualizer
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
 
-    seed_everything(opt.seed, deterministic=opt.deterministic)
+    # seed_everything(opt.seed, deterministic=opt.deterministic)
 
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     dataset_size = len(dataset)    # get the number of images in the dataset.
