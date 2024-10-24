@@ -1,10 +1,11 @@
 """
 experiment launcher using tmux panes
 """
-import os
 import math
-import GPUtil
+import os
 import re
+
+import GPUtil
 
 available_gpu_devices = None
 
