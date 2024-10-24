@@ -162,6 +162,8 @@ def __scale_shortside(img, target_width, crop_width, method=Image.Resampling.BIC
     else:
         scale = target_width / shortside
         return img.resize((round(ow * scale), round(oh * scale)), method)
+    # scale = target_width / shortside
+    # return img.resize((round(ow * scale), round(oh * scale)), method)
 
 
 def __trim(img, trim_width):

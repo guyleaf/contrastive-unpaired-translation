@@ -78,17 +78,19 @@ class CustomDatasetDataLoader:
         self.dataset = dataset_class(opt)
         print("dataset [%s] was created" % type(self.dataset).__name__)
 
-        if opt.serial_batches:
-            generator = None
-        else:
-            generator = torch.Generator()
-            generator.manual_seed(opt.seed)
+        generator = None
+        # if opt.serial_batches:
+        #     generator = None
+        # else:
+        #     generator = torch.Generator()
+        #     generator.manual_seed(opt.seed)
 
         num_workers = int(opt.num_threads)
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=opt.batch_size,
-            shuffle=generator is not None,
+            # shuffle=generator is not None,
+            shuffle=not opt.serial_batches,
             num_workers=num_workers,
             drop_last=True if opt.isTrain else False,
             pin_memory=True,
