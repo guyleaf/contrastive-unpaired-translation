@@ -2,6 +2,7 @@ import argparse
 import os
 import random
 from operator import attrgetter
+from typing import Optional
 
 from PIL import Image
 
@@ -81,7 +82,7 @@ class UnalignedWeatherDataset(BaseDataset):
 
         parser.set_defaults(load_size=None, crop_size=None)
         if is_train:
-            parser.set_defaults(preprocess="scale_shortside,crop")
+            parser.set_defaults(preprocess="fixsize,crop")
         else:
             parser.set_defaults(preprocess="none")
         return parser
@@ -94,19 +95,8 @@ class UnalignedWeatherDataset(BaseDataset):
         """
         BaseDataset.__init__(self, opt)
 
-        self.dir_A = opt.phase + "A" if opt.data_domainA is None else opt.data_domainA
-        self.dir_B = opt.phase + "B" if opt.data_domainB is None else opt.data_domainB
-
-        self.dir_A = os.path.join(opt.dataroot, self.dir_A)
-        self.dir_B = os.path.join(opt.dataroot, self.dir_B)
-
-        if (
-            opt.phase == "test"
-            and not os.path.exists(self.dir_A)
-            and os.path.exists(os.path.join(opt.dataroot, "valA"))
-        ):
-            self.dir_A = os.path.join(opt.dataroot, "valA")
-            self.dir_B = os.path.join(opt.dataroot, "valB")
+        self.dir_A = self.resolve_path(opt.dataroot, opt.phase, "A", opt.data_domainA)
+        self.dir_B = self.resolve_path(opt.dataroot, opt.phase, "B", opt.data_domainB)
 
         self.A_paths = sorted(
             make_dataset(self.dir_A, opt.max_dataset_size)
@@ -116,6 +106,28 @@ class UnalignedWeatherDataset(BaseDataset):
         )  # load images from '/path/to/data/trainB'
         self.A_size = len(self.A_paths)  # get the size of dataset A
         self.B_size = len(self.B_paths)  # get the size of dataset B
+
+    @property
+    def is_finetuning(self) -> bool:
+        return self.opt.isTrain and self.current_epoch > self.opt.n_epochs
+
+    def resolve_path(
+        self, dataroot: str, phase: str, domain: str, data_domain: Optional[str] = None
+    ):
+        dir_ = (
+            f"{phase}{domain}"
+            if data_domain is None
+            else os.path.join(phase, data_domain)
+        )
+        dir_ = os.path.join(dataroot, dir_)
+
+        if phase == "test" and not os.path.exists(dir_):
+            if data_domain is None:
+                dir_ = os.path.join(dataroot, f"val{domain}")
+            else:
+                dir_ = os.path.join(dataroot, "val", data_domain)
+
+        return dir_
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -143,24 +155,23 @@ class UnalignedWeatherDataset(BaseDataset):
         # Apply image transformation
         # For CUT/FastCUT mode, if in finetuning phase (learning rate is decaying),
         # do not perform resize-crop data augmentation of CycleGAN.
-        is_finetuning = self.opt.isTrain and self.current_epoch > self.opt.n_epochs
-        # modified_opt = util.copyconf(
-        #     self.opt,
-        #     load_size=self.opt.crop_size if is_finetuning else self.opt.load_size,
-        # )
+
         # TODO: random select A or B img?
         # TODO: fine-tuning stage?
         short_size = min(A_img.size)
         crop_size = max(min(short_size, self.opt.max_crop_size), self.opt.min_crop_size)
         load_size = max(min(short_size, self.opt.max_load_size), self.opt.min_load_size)
 
+        params = dict(size=load_size)
         modified_opt = util.copyconf(
             self.opt,
             load_size=load_size,
-            crop_size=load_size if is_finetuning else crop_size,
+            crop_size=load_size if self.is_finetuning else crop_size,
         )
         transform = get_transform(
-            modified_opt, method=Image.Resampling[modified_opt.resampling]
+            modified_opt,
+            params=params,
+            method=Image.Resampling[modified_opt.resampling],
         )
         A = transform(A_img)
         B = transform(B_img)
