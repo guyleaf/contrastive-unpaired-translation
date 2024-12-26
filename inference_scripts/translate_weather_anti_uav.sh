@@ -2,38 +2,35 @@
 set -eu
 
 dataset=$1
-out=$2
-gpu="${3:-0}"
-expSuffix="${4:-_load_845_crop_768_fdd}"
-
-weathers=("foggy" "rainy" "snowy")
+expName=$2
+out=$3
+gpu="${4:-0}"
 
 dataset="${dataset%/}"
 out="${out%/}"
 
 mkdir -p "$out"
 
-for weather in "${weathers[@]}"
+mapfile -t roots < <(find "$dataset" -maxdepth 1 ! -path "$dataset" -type d)
+for root in "${roots[@]}"
 do
-    root="$dataset/$weather"
-    if [ ! -d "$root" ]; then
-        echo "The '$root' folder doesn't exist. Skipped."
+    weather=$(basename "$root")
+
+    name="${expName}_${weather}"
+    if [ ! -d "checkpoints/$name" ]; then
+        echo "The '$name' checkpoint doesn't exist. Skipped."
         continue
     fi
 
-    # must be fixed corresponding to the checkpoint
-    expName="weather_anti_uav_CUT_${weather}$expSuffix"
-
-    # follow the instruction in https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/tree/master?tab=readme-ov-file#apply-a-pre-trained-model-cyclegan
     python test.py --dataroot "$root" \
-        --name "$expName" \
+        --name "$name" \
         --model test \
+        --num_test 10000000 \
         --dataset_mode single \
-        --preprocess "scale_shortside" \
-        --load_size 845 \
+        --preprocess "none" \
         --gpu_ids "$gpu"
 
-    result="results/$expName"
+    result="results/$name"
     target="$out/$weather"
     rm -rf "$target"
     mv "$result/test_latest/images/fake" "$target"
